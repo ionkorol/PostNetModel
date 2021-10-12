@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { useDispatch, TypedUseSelectorHook, useSelector } from "react-redux";
 import { posenetReducer } from "./slices";
+import PoseSocket from "./socketHandle/poseData";
 
 export const store = configureStore({
   reducer: {
@@ -15,3 +16,5 @@ export type AppDispatch = typeof store.dispatch;
 // Use throughout your app instead of plain `useDispatch` and `useSelector`
 export const useAppDispatch = () => useDispatch<AppDispatch>();
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+
+PoseSocket.start(store.dispatch);

@@ -7,6 +7,7 @@ import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as posenet from "@tensorflow-models/posenet";
 import { FormatedPartProp, FormatedPoseProp } from "../../utils/interface";
+import KalmanSmoothing from "../../lib/KalmanSmoothing";
 
 const CONFIDENCE = 0.3;
 
@@ -15,49 +16,60 @@ const Model = (props: {
   poses: FormatedPoseProp[];
 }) => {
   const group = useRef();
+  let currentPositions: FormatedPoseProp[] = [];
 
-  const { nodes, materials } = useGLTF("./model3.glb") as any;
+  const { nodes, materials, scene } = useGLTF("./model3.glb") as any;
 
   useFrame(
     useCallback(
       (state, delta) => {
         // console.log(props.poses);
         // console.log(nodes);
+
         let localPoses = [...props.poses];
         const bestPose = localPoses.sort((a, b) => b.SCORE - a.SCORE)[0];
-        console.log(localPoses, bestPose);
-
         if (!bestPose) {
           return;
         }
 
+        if (currentPositions.length < 5) {
+          currentPositions = [...currentPositions, bestPose];
+        } else {
+          currentPositions = [...currentPositions.slice(1), bestPose];
+        }
+
+        const kalmanPose = KalmanSmoothing(currentPositions);
+
+        const poseInUse = kalmanPose;
+        console.log(poseInUse.LEFT_WRIST.x);
+
         // Left arm & elbow
-        nodes.Ch31_Body.skeleton.bones[31].rotation.y = getAngle(
-          bestPose.LEFT_SHOULDER,
-          bestPose.LEFT_ELBOW,
+        nodes.Ch31_Body.skeleton.bones[7].rotation.y = getAngle(
+          poseInUse.LEFT_SHOULDER,
+          poseInUse.LEFT_ELBOW,
           0,
           0,
           -1
         );
-        nodes.Ch31_Body.skeleton.bones[33].rotation.x = getAngle(
-          bestPose.LEFT_ELBOW,
-          bestPose.LEFT_WRIST,
+        nodes.Ch31_Body.skeleton.bones[9].rotation.x = getAngle(
+          poseInUse.LEFT_ELBOW,
+          poseInUse.LEFT_WRIST,
           0,
           0,
-          1
+          -1
         );
 
         // Right arm & elbow
         nodes.Ch31_Body.skeleton.bones[31].rotation.y = getAngle(
-          bestPose.RIGHT_ELBOW,
-          bestPose.RIGHT_SHOULDER,
+          poseInUse.RIGHT_ELBOW,
+          poseInUse.RIGHT_SHOULDER,
           0,
           0,
           -1
         );
         nodes.Ch31_Body.skeleton.bones[33].rotation.x = getAngle(
-          bestPose.RIGHT_WRIST,
-          bestPose.RIGHT_ELBOW,
+          poseInUse.RIGHT_WRIST,
+          poseInUse.RIGHT_ELBOW,
           0,
           0,
           -1
@@ -65,33 +77,45 @@ const Model = (props: {
 
         // Left leg & knee
         nodes.Ch31_Body.skeleton.bones[55].rotation.z = getAngle(
-          bestPose.LEFT_HIP,
-          bestPose.LEFT_KNEE,
+          poseInUse.LEFT_HIP,
+          poseInUse.LEFT_KNEE,
           Math.PI / 2,
           Math.PI,
           -1
         );
-        //nodes.Ch31_Body.skeleton.bones[56].rotation.z = getAngle(kp[15], kp[13], (Math.PI/2), 0, -1)
+        nodes.Ch31_Body.skeleton.bones[56].rotation.z = getAngle(
+          poseInUse.LEFT_KNEE,
+          poseInUse.LEFT_ANKLE,
+          Math.PI / 2,
+          0,
+          -1
+        );
 
         // Right leg & knee
         nodes.Ch31_Body.skeleton.bones[60].rotation.z = getAngle(
-          bestPose.RIGHT_HIP,
-          bestPose.RIGHT_KNEE,
+          poseInUse.RIGHT_HIP,
+          poseInUse.RIGHT_KNEE,
           Math.PI / 2,
           Math.PI,
           -1
         );
-        //nodes.Ch31_Body.skeleton.bones[61].rotation.z = getAngle(kp[16], kp[14], (Math.PI/2), 0, -1)
+        nodes.Ch31_Body.skeleton.bones[61].rotation.z = getAngle(
+          poseInUse.RIGHT_KNEE,
+          poseInUse.RIGHT_ANKLE,
+          Math.PI / 2,
+          0,
+          -1
+        );
 
         // Head
         nodes.Ch31_Body.skeleton.bones[5].rotation.y = getYRotation(
-          bestPose.LEFT_EYE,
-          bestPose.RIGHT_EYE,
-          bestPose.NOSE
+          poseInUse.LEFT_EYE,
+          poseInUse.RIGHT_EYE,
+          poseInUse.NOSE
         );
         nodes.Ch31_Body.skeleton.bones[3].rotation.z = getZRotation(
-          bestPose.LEFT_EYE,
-          bestPose.RIGHT_EYE
+          poseInUse.LEFT_EYE,
+          poseInUse.RIGHT_EYE
         );
       },
       [props.poses]

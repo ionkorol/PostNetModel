@@ -25,11 +25,11 @@ const posenetSlice = createSlice({
   name: "postnet",
   initialState,
   reducers: {
-    setPostnetData: (state, { payload }: PayloadAction<FormatedPoseProp[]>) => {
+    setPosenetData: (state, { payload }: PayloadAction<FormatedPoseProp[]>) => {
       state.data.poses = payload;
     },
   },
 });
 
 export default posenetSlice.reducer;
-export const { setPostnetData } = posenetSlice.actions;
+export const { setPosenetData } = posenetSlice.actions;

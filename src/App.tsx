@@ -7,6 +7,7 @@ import { connect } from "react-redux";
 import { RootState, useAppSelector } from "./store/store";
 import { FormatedPoseProp } from "./utils/interface";
 import CameraControls from "./components/Three/CameraControl";
+import KalmanSmoothing from "./lib/KalmanSmoothing";
 
 const App = (props: { poses: FormatedPoseProp[] }) => {
   return (

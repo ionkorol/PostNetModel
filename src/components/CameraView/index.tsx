@@ -8,7 +8,7 @@ import {
   RawKeypointsTypes,
 } from "../../utils/interface";
 import { useAppDispatch } from "../../store/store";
-import { setPostnetData } from "../../store/slices/posenetSlice";
+import { setPosenetData } from "../../store/slices/posenetSlice";
 
 const CameraView = () => {
   const webcamRef = useRef<Webcam>(null);
@@ -39,7 +39,7 @@ const CameraView = () => {
 
       const poses = await net.estimateMultiplePoses(video!);
 
-      dispatch(setPostnetData(normalizePoseData(poses)));
+      dispatch(setPosenetData(normalizePoseData(poses)));
     }
   };
 
